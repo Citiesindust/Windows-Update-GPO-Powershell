@@ -1,0 +1,22 @@
+# Checking for updates
+Write-Host "Checking for updates... Your patience is appreciated"
+$session = New-Object -ComObject "Microsoft.Update.Session"
+$searcher = $session.CreateUpdateSearcher()
+$updates = $searcher.Search("IsInstalled=0")
+
+# Installing the updates, or not
+if ($updates.Updates.Count -gt 0) {
+    Write-Host "Found $($updates.Updates.Count) update(s). Installing... Thank you for your continued patience"
+    $installer = $session.CreateUpdateInstaller()
+    $installer.Updates = $updates.Updates
+    $result = $installer.Install()
+
+    # Check installation result
+    if ($result.ResultCode -eq 2) {
+        Write-Host "Updates installed successfully. Please restart your computer to complete the installation. Teamwork makes the dream work!"
+    } else {
+        Write-Host "Failed to install updates. Error code: $($result.ResultCode)"
+    }
+} else {
+    Write-Host "No updates available. Thank you for your cooperation and have a nice day"
+}
