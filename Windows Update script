@@ -1,22 +1,29 @@
-# Checking for updates
-Write-Host "Checking for updates... Your patience is appreciated"
-$session = New-Object -ComObject "Microsoft.Update.Session"
-$searcher = $session.CreateUpdateSearcher()
-$updates = $searcher.Search("IsInstalled=0")
+# Set the path for the log file
+$LogFilePath = "C:\Windows\Temp\WindowsUpdateLog.txt"
 
-# Installing the updates, or not
-if ($updates.Updates.Count -gt 0) {
-    Write-Host "Found $($updates.Updates.Count) update(s). Installing... Thank you for your continued patience"
-    $installer = $session.CreateUpdateInstaller()
-    $installer.Updates = $updates.Updates
-    $result = $installer.Install()
+# Start Windows Update service
+Start-Service -Name wuauserv
 
-    # Check installation result
-    if ($result.ResultCode -eq 2) {
-        Write-Host "Updates installed successfully. Please restart your computer to complete the installation. Teamwork makes the dream work!"
-    } else {
-        Write-Host "Failed to install updates. Error code: $($result.ResultCode)"
+# Check for available updates
+$Updates = Get-WindowsUpdate
+
+if ($Updates.Count -gt 0) {
+    # Download updates
+    $Updates | foreach {
+        Write-Output "Downloading update: $($_.Title)"
+        Install-WindowsUpdate -KBArticleID $_.KBArticleID -Confirm:$false
     }
-} else {
-    Write-Host "No updates available. Thank you for your cooperation and have a nice day"
+
+    # Install updates
+    Write-Output "Installing downloaded updates..."
+    Install-WindowsUpdate -AcceptAll -Confirm:$false
+
+    # Write log entry
+    $LogEntry = "$(Get-Date) - Updates installed successfully."
+    Add-Content -Path $LogFilePath -Value $LogEntry
+}
+else {
+    # Write log entry
+    $LogEntry = "$(Get-Date) - No updates available."
+    Add-Content -Path $LogFilePath -Value $LogEntry
 }
